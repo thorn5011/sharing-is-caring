@@ -169,6 +169,9 @@ func appendToJSONFile[T any](data []T, filename string) error {
 }
 
 func storeResultsInSQLTable(results []models.DNSResults) error {
+	if verbose {
+		fmt.Println("ℹ️ [SQL] Storing results in SQL table")
+	}
 	// Open a connection to the database
 	hostname, port, database := "192.168.0.187", "3306", "netMon"
 	db, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", os.Getenv("NETMON_DB_USERNAME"), os.Getenv("NETMON_DB_PASSWORD"), hostname, port, database))
