@@ -17,3 +17,14 @@ services:
     cap_add:
       - NET_ADMIN
     restart: unless-stopped
+
+  metabase:
+    container_name: metabase
+    image: metabase/metabase
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: 'Europe/Oslo'
+    volumes:
+      - './metabase-data:/metabase-data'
+    restart: unless-stopped
