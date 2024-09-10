@@ -46,3 +46,6 @@ services:
     command: sh -c "echo 'Hello from BusyBox!' && sleep infinity"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    environment:
+      MB_DB_USER: ${METABASEDBUSER}
+      MB_DB_PASS: ${METABASEDBPASS}
