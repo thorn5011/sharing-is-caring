@@ -20,11 +20,22 @@ services:
 
   metabase:
     container_name: metabase
-    image: metabase/metabase
+    image: bobblybook/metabase:latest
     ports:
       - "3000:3000"
     environment:
-      TZ: 'Europe/Oslo'
+      JAVA_TIMEZONE: 'Europe/Oslo'
+      MB_DB_TYPE: mysql
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 3306
+      MB_DB_USER: ${METABASEDBUSER}
+      MB_DB_PASS: ${METABASEDBPASS}
+      MB_DB_HOST: localhost
+      MB_DB_CONNECTION_URI: "jdbc:mysql://localhost:3306/metabase?user=${METABASEDBUSER}&password=${METABASEDBPASS}"
+
     volumes:
       - './metabase-data:/metabase-data'
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
+
