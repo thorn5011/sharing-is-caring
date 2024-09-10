@@ -39,3 +39,10 @@ services:
       - "host.docker.internal:host-gateway"
     restart: unless-stopped
 
+
+  busybox:
+    image: busybox
+    container_name: busybox
+    command: sh -c "echo 'Hello from BusyBox!' && sleep infinity"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
