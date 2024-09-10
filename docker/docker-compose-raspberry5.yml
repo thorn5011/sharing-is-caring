@@ -30,8 +30,8 @@ services:
       MB_DB_PORT: 3306
       MB_DB_USER: ${METABASEDBUSER}
       MB_DB_PASS: ${METABASEDBPASS}
-      MB_DB_HOST: localhost
-      MB_DB_CONNECTION_URI: "jdbc:mysql://localhost:3306/metabase?user=${METABASEDBUSER}&password=${METABASEDBPASS}"
+      MB_DB_HOST: host.docker.internal
+      MB_DB_CONNECTION_URI: "jdbc:mysql://host.docker.internal:3306/metabase?user=${METABASEDBUSER}&password=${METABASEDBPASS}"
 
     volumes:
       - './metabase-data:/metabase-data'
