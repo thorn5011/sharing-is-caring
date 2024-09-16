@@ -1,0 +1,4 @@
+sense-hat
+requests
+mysql-connector
+RTIMULib
