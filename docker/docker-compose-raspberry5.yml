@@ -49,3 +49,17 @@ services:
     environment:
       MB_DB_USER: ${METABASEDBUSER}
       MB_DB_PASS: ${METABASEDBPASS}
+
+  dovecot:
+    image: dovecot/core:latest  # Use the official Dovecot Docker image
+    container_name: dovecot
+    restart: always
+    volumes:
+      - ./dovecot/config:/etc/dovecot  # Mount your custom configuration
+      - ./dovecot/mail:/var/mail         # Store emails persistently
+      - ./logs:/var/log/dovecot   # log to host
+
+    ports:
+      - 143:143                  # IMAP
+      - 993:993                  # IMAPS
+    # Add other ports (POP3, etc.) if needed
