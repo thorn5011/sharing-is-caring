@@ -248,3 +248,5 @@ if __name__ == "__main__":
     logging.info("[i] Starting a new session\n--------------------------------")
     # send_flag("NO")
     monitor_sessions()
+
+# todo: store the ipinfo into the DB for a while, e.g. 30 days
