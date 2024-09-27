@@ -61,17 +61,17 @@ def check_geo_data(ip: str) -> Union[dict | None]:
 
 
 def update_geodata_to_db(data:dict) -> None:
-    data = {
-    "ip": "1.1.1.1",
-    "hostname": "one.one.one.one",
-    "anycast": True,
-    "city": "Jakarta",
-    "region": "Jakarta",
-    "country": "ID",
-    "loc": "-6.2146,106.8451",
-    "org": "AS13335 Cloudflare, Inc.",
-    "timezone": "Asia/Jakarta"
-    }
+    # data = {
+    # "ip": "1.1.1.1",
+    # "hostname": "one.one.one.one",
+    # "anycast": True,
+    # "city": "Jakarta",
+    # "region": "Jakarta",
+    # "country": "ID",
+    # "loc": "-6.2146,106.8451",
+    # "org": "AS13335 Cloudflare, Inc.",
+    # "timezone": "Asia/Jakarta"
+    # }
     # {'ip': '154.213.184.15', 'country': 'NL', 'city': 'Kerkrade', 'asn': 'AS51396 Pfcloud UG', 'hostname': 'N/A'}
     logging.debug("[i] Updating geolocation data to the database")
     geo = GeolocationData(
@@ -315,9 +315,6 @@ def get_sessions_from_db() -> list:
 # Monitor the sessions table for new inserts
 def monitor_sessions():
     actors = []
-    update_geodata_to_db({"asd": "asd"})
-    import sys
-    sys.exit(0)
     new_rows = get_sessions_from_db()
     if new_rows:
         actors = process_sessions(new_rows)
