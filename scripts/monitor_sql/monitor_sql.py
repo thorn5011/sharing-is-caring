@@ -294,6 +294,7 @@ def get_geodata_from_db(ip:str) -> list:
     rows = cursor.fetchall()
     cursor.close()
     connection.close()
+    logging.debug("[i] Geolocation data fetched from the database: ", rows)
     return rows
 
 
@@ -327,7 +328,7 @@ def monitor_sessions():
 
 
 if __name__ == "__main__":
-    logging.info("[i] Starting a new session\n--------------------------------")
+    logging.info("--------------------------------\n[i] Starting a new session\n--------------------------------")
     # send_flag("NO")
     monitor_sessions()
 
