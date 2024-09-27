@@ -61,6 +61,17 @@ def check_geo_data(ip: str) -> Union[dict | None]:
 
 
 def update_geodata_to_db(data:dict) -> None:
+    data = {
+    "ip": "1.1.1.1",
+    "hostname": "one.one.one.one",
+    "anycast": True,
+    "city": "Jakarta",
+    "region": "Jakarta",
+    "country": "ID",
+    "loc": "-6.2146,106.8451",
+    "org": "AS13335 Cloudflare, Inc.",
+    "timezone": "Asia/Jakarta"
+    }
     logging.debug("[i] Updating geolocation data to the database")
     geo = GeolocationData(
         data["ip"],
