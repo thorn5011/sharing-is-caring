@@ -97,7 +97,6 @@ def update_geodata_to_db(data:dict) -> None:
             logging.debug("[i] Geolocation data has been updated recently or is not older than 90 days. Skipping the update.")
 
 
-
 def insert_geodata_to_db(ip: str, hostname: str, org: str, city: str, country: str, timezone: str, anycast: str) -> None:
     connection = connect_to_db()
     cursor = connection.cursor()
@@ -259,6 +258,9 @@ def process_sessions(sessions:list) -> list:
                     sense.set_pixels(rbg_code)
                     time.sleep(0.2)
             location = get_ip_geolocation(ip)
+            update_geodata_to_db(location)
+            import sys
+            sys.exit(0)
             if location:
                 update_geodata_to_db(location)
                 logging.info(
