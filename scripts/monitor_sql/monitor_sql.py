@@ -100,15 +100,15 @@ def update_geodata_to_db(data:dict) -> None:
 def insert_geodata_to_db(ip: str, hostname: str, org: str, city: str, country: str, timezone: str, anycast: str) -> None:
     connection = connect_to_db()
     cursor = connection.cursor()
-    query = "INSERT INTO geodata (ip, hostname, org, city, country, timezone, anycast) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-    cursor.execute(query, (ip, hostname, org, city, country, timezone, anycast))
-    if cursor.lastrowid:
-        logging.info("[i] Data inserted successfully.")
-    else:
-        logging.error("[x] Failed to insert data.")
-    connection.commit()
-    cursor.close()
-    connection.close()
+    query = "INSERT INTO geoloc (ip, hostname, org, city, country, timezone, anycast) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    try:
+        cursor.execute(query, (ip, hostname, org, city, country, timezone, anycast))
+        connection.commit()
+    except mysql.IntegrityError:
+        logging.error("[x] Duplicate entry or some other error. Failed to insert: ", ip)
+    finally:
+        cursor.close()
+        connection.close()
 
 
 def get_ip_geolocation(ip_address: str) -> dict:
