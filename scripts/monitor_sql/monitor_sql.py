@@ -87,7 +87,7 @@ def update_geodata_to_db(data:dict) -> None:
     )
     row = get_geodata_from_db(geo.ip)
     if not row:
-        insert_geodata_to_db(geo.ip, geo.hostname, geo.org, geo.city, geo.country, geo.timezone, geo.anycast)
+        insert_geodata_to_db(geo.ip, geo.hostname, geo.org, geo.city, geo.region, geo.country, geo.timezone, geo.anycast)
     else:
         logging.debug(f"[i] Geolocation data already exists in the database, data: {row}")
         if len(row) > 1:
