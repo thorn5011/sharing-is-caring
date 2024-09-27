@@ -89,7 +89,7 @@ def update_geodata_to_db(data:dict) -> None:
     if not row:
         insert_geodata_to_db(geo.ip, geo.hostname, geo.org, geo.city, geo.country, geo.timezone, geo.anycast)
     else:
-        logging.debug(f"[i] Geolocation data already exists in the database, data: {row}", )
+        logging.debug(f"[i] Geolocation data already exists in the database, data: {row}")
         if len(row) > 1:
             logging.error("[x] Multiple entries found for the same IP address. This should not happen.")
         elif row[0].get("date_added") < datetime.datetime.now() - datetime.timedelta(days=90):
@@ -289,7 +289,7 @@ def get_geodata_from_db(ip:str) -> list:
     logging.debug(f"[i] Fetching geolocation data from the database, IP: {ip}")
     connection = connect_to_db()
     cursor = connection.cursor(dictionary=True)
-    query = "SELECT ip, hostname, org, city, region, country, timezone, anycast, data_added FROM geoloc WHERE ip = %s"
+    query = "SELECT ip, hostname, org, city, region, country, timezone, anycast, date_added FROM geoloc WHERE ip = %s"
     cursor.execute(query, (ip,))
     rows = cursor.fetchall()
     cursor.close()
