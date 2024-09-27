@@ -258,9 +258,6 @@ def process_sessions(sessions:list) -> list:
                     sense.set_pixels(rbg_code)
                     time.sleep(0.2)
             location = get_ip_geolocation(ip)
-            update_geodata_to_db(location)
-            import sys
-            sys.exit(0)
             if location:
                 update_geodata_to_db(location)
                 logging.info(
@@ -314,6 +311,9 @@ def get_sessions_from_db() -> list:
 # Monitor the sessions table for new inserts
 def monitor_sessions():
     actors = []
+    update_geodata_to_db({"asd": "asd"})
+    import sys
+    sys.exit(0)
     new_rows = get_sessions_from_db()
     if new_rows:
         actors = process_sessions(new_rows)
