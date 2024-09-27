@@ -77,7 +77,7 @@ def update_geodata_to_db(data:dict) -> None:
     geo = GeolocationData(
         data.get("ip"),
         data.get("hostname", None),
-        data.get("anycast", None),
+        data.get("anycast", False),
         data.get("city", None),
         data.get("region", None),
         data.get("country", None),
