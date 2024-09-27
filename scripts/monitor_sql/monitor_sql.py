@@ -72,17 +72,18 @@ def update_geodata_to_db(data:dict) -> None:
     "org": "AS13335 Cloudflare, Inc.",
     "timezone": "Asia/Jakarta"
     }
+    # {'ip': '154.213.184.15', 'country': 'NL', 'city': 'Kerkrade', 'asn': 'AS51396 Pfcloud UG', 'hostname': 'N/A'}
     logging.debug("[i] Updating geolocation data to the database")
     geo = GeolocationData(
-        data["ip"],
-        data["hostname"],
+        data.get("ip"),
+        data.get("hostname", None),
         data.get("anycast", None),
-        data["city"],
-        data["region"],
-        data["country"],
-        data["loc"],
-        data["org"],
-        data["timezone"]
+        data.get("city", None),
+        data.get("region", None),
+        data.get("country", None),
+        data.get("loc", None),
+        data.get("org", None),
+        data.get("timezone", None)
     )
     row = get_geodata_from_db(geo.ip)
     if not row:
