@@ -14,7 +14,7 @@ from sense_hat import SenseHat
 # Configure logging
 logging.basicConfig(
     filename="app.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 sense = SenseHat()
