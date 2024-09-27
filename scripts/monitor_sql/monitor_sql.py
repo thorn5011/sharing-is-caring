@@ -294,7 +294,7 @@ def get_geodata_from_db(ip:str) -> list:
     rows = cursor.fetchall()
     cursor.close()
     connection.close()
-    logging.debug("[i] Geolocation data fetched from the database: ", rows)
+    logging.debug(f"[i] Geolocation data fetched from the database: {rows}" )
     return rows
 
 
