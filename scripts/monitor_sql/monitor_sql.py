@@ -39,11 +39,66 @@ colors = {
     "w": (255, 255, 255),  # White
 }
 
+
+class GeolocationData:
+    def __init__(self, ip, hostname, anycast, city, region, country, loc, org, timezone):
+        self.ip = ip
+        self.hostname = hostname
+        self.anycast = anycast
+        self.city = city
+        self.region = region
+        self.country = country
+        self.loc = loc
+        self.org = org
+        self.timezone = timezone
+
+
 def check_geo_data(ip: str) -> Union[dict | None]:
     for e in geolocation:
         if e["ip"] == ip:
             return e
     return None
+
+
+def update_geodata_to_db(data:dict) -> None:
+    logging.debug("[i] Updating geolocation data to the database")
+    geo = GeolocationData(
+        data["ip"],
+        data["hostname"],
+        data["anycast"],
+        data["city"],
+        data["region"],
+        data["country"],
+        data["loc"],
+        data["org"],
+        data["timezone"]
+    )
+    row = get_geodata_from_db(geo.ip)
+    if not row:
+        insert_geodata_to_db(geo.ip, geo.hostname, geo.org, geo.city, geo.country, geo.timezone, geo.anycast)
+    else:
+        logging.debug("[i] Geolocation data already exists in the database.")
+        old_data = GeolocationData(row)
+        if (datetime.datetime.now() - datetime.timedelta(days=90)) > old_data.date_added:
+            logging.debug("[i] Geolocation data is older than 90 days. Updating the data.")
+            update_geodata_to_db(geo.ip)
+        else:
+            logging.debug("[i] Geolocation data has been updated recently or is not older than 90 days. Skipping the update.")
+
+
+
+def insert_geodata_to_db(ip: str, hostname: str, org: str, city: str, country: str, timezone: str, anycast: str) -> None:
+    connection = connect_to_db()
+    cursor = connection.cursor()
+    query = "INSERT INTO geodata (ip, hostname, org, city, country, timezone, anycast) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+    cursor.execute(query, (ip, hostname, org, city, country, timezone, anycast))
+    if cursor.lastrowid:
+        logging.info("[i] Data inserted successfully.")
+    else:
+        logging.error("[x] Failed to insert data.")
+    connection.commit()
+    cursor.close()
+    connection.close()
 
 
 def get_ip_geolocation(ip_address: str) -> dict:
@@ -165,7 +220,6 @@ def flag_summary(actors: list) -> None:
         sense.show_message(f"{count}", text_colour=red, scroll_speed=0.35)   # The bigger the number, the lower the speed.
 
 
-
 def process_sessions(sessions:list) -> list:
     actors = []
     last_processed_sessions = get_last_processed_sessions()
@@ -195,6 +249,7 @@ def process_sessions(sessions:list) -> list:
                     time.sleep(0.2)
             location = get_ip_geolocation(ip)
             if location:
+                update_geodata_to_db(location)
                 logging.info(
                     f"[x] New session detected! ID: {session_id}, IP: {ip}, Country: {location.get('country')} ({location.get('city')}), ASN: {location.get('asn')}, Hostname: {location.get('hostname')}"
                 )
@@ -216,6 +271,17 @@ def process_sessions(sessions:list) -> list:
         logging.debug("[i] No new sessions detected.")
     logging.info(f"[i] Sessions: {len(rows)}, Geolocated: {len(actors)}")
     return actors
+
+
+def get_geodata_from_db(ip:str) -> list:
+    connection = connect_to_db()
+    cursor = connection.cursor(dictionary=True)
+    query = "SELECT ip, hostname, org, city, country, timezone, anycast, data_added FROM geodata WHERE ip = %s"
+    cursor.execute(query, (ip,))
+    rows = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return rows
 
 
 def get_sessions_from_db() -> list:
