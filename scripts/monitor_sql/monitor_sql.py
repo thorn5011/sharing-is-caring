@@ -286,7 +286,7 @@ def process_sessions(sessions:list) -> list:
 def get_geodata_from_db(ip:str) -> list:
     connection = connect_to_db()
     cursor = connection.cursor(dictionary=True)
-    query = "SELECT ip, hostname, org, city, country, timezone, anycast, data_added FROM geodata WHERE ip = %s"
+    query = "SELECT ip, hostname, org, city, region, country, timezone, anycast, data_added FROM geoloc WHERE ip = %s"
     cursor.execute(query, (ip,))
     rows = cursor.fetchall()
     cursor.close()
