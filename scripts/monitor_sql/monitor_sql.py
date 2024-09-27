@@ -86,6 +86,7 @@ def update_geodata_to_db(data:dict) -> None:
         data.get("timezone", None)
     )
     row = get_geodata_from_db(geo.ip)
+    logging.debug("[i] Geolocation data from the database: ", row)
     if not row:
         insert_geodata_to_db(geo.ip, geo.hostname, geo.org, geo.city, geo.country, geo.timezone, geo.anycast)
     else:
@@ -328,7 +329,9 @@ def monitor_sessions():
 
 
 if __name__ == "__main__":
-    logging.info("--------------------------------\n[i] Starting a new session\n--------------------------------")
+    logging.info("--------------------------------")
+    logging.info("[i] Starting a new session")
+    logging.info("--------------------------------")
     # send_flag("NO")
     monitor_sessions()
 
