@@ -90,7 +90,9 @@ def update_geodata_to_db(data:dict) -> None:
         insert_geodata_to_db(geo.ip, geo.hostname, geo.org, geo.city, geo.country, geo.timezone, geo.anycast)
     else:
         logging.debug("[i] Geolocation data already exists in the database.")
-        if (datetime.datetime.now() - datetime.timedelta(days=90)) > row.get("date_added"):
+        if len(row) > 1:
+            logging.error("[x] Multiple entries found for the same IP address. This should not happen.")
+        elif (datetime.datetime.now() - datetime.timedelta(days=90)) > row[0].get("date_added"):
             logging.debug("[i] Geolocation data is older than 90 days. Updating the data.")
             update_geodata_to_db(geo.ip)
         else:
