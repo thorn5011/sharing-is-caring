@@ -55,39 +55,17 @@ class GeolocationData:
 
 def check_geo_data(ip: str) -> Union[dict | None]:
     for e in geolocation:
-        if e["ip"] == ip:
+        if e.ip == ip:
             return e
     return None
 
 
-def update_geodata_to_db(data:dict) -> None:
-    # data = {
-    # "ip": "1.1.1.1",
-    # "hostname": "one.one.one.one",
-    # "anycast": True,
-    # "city": "Jakarta",
-    # "region": "Jakarta",
-    # "country": "ID",
-    # "loc": "-6.2146,106.8451",
-    # "org": "AS13335 Cloudflare, Inc.",
-    # "timezone": "Asia/Jakarta"
-    # }
-    # {'ip': '154.213.184.15', 'country': 'NL', 'city': 'Kerkrade', 'asn': 'AS51396 Pfcloud UG', 'hostname': 'N/A'}
+def update_geodata_to_db(geo:GeolocationData) -> None:
+    # data = {"ip": "1.1.1.1", "hostname": "one.one.one.one", "anycast": True, "city": "Jakarta", "region": "Jakarta", "country": "ID", "loc": "-6.2146,106.8451", "org": "AS13335 Cloudflare, Inc.", "timezone": "Asia/Jakarta"}
     logging.debug("[i] Updating geolocation data to the database")
-    geo = GeolocationData(
-        data.get("ip"),
-        data.get("hostname", None),
-        data.get("anycast", False),
-        data.get("city", None),
-        data.get("region", None),
-        data.get("country", None),
-        data.get("loc", None),
-        data.get("org", None),
-        data.get("timezone", None)
-    )
     row = get_geodata_from_db(geo.ip)
     if not row:
-        insert_geodata_to_db(geo.ip, geo.hostname, geo.org, geo.city, geo.region, geo.country, geo.timezone, geo.anycast)
+        insert_geodata_to_db(geo)
     else:
         logging.debug(f"[i] Geolocation data already exists in the database, data: {row}")
         if len(row) > 1:
@@ -99,21 +77,21 @@ def update_geodata_to_db(data:dict) -> None:
             logging.debug("[i] Geolocation data has been updated recently or is not older than 90 days. Skipping the update.")
 
 
-def insert_geodata_to_db(ip: str, hostname: str, org: str, city: str, region: str, country: str, timezone: str, anycast: str) -> None:
+def insert_geodata_to_db(geo: GeolocationData) -> None:
     connection = connect_to_db()
     cursor = connection.cursor()
     query = "INSERT INTO geoloc (ip, hostname, org, city, region, country, timezone, anycast) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
     try:
-        cursor.execute(query, (ip, hostname, org, city, region, country, timezone, anycast))
+        cursor.execute(query, (geo.ip, geo.hostname, geo.org, geo.city, geo.region, geo.country, geo.timezone, geo.anycast))
         connection.commit()
     except mysql.IntegrityError:
-        logging.error("[x] Duplicate entry or some other error. Failed to insert: ", ip)
+        logging.error(f"[x] Duplicate entry or some other error. Failed to insert: {geo.ip}")
     finally:
         cursor.close()
         connection.close()
 
 
-def get_ip_geolocation(ip_address: str) -> dict:
+def get_ip_geolocation(ip_address: str) -> Union[GeolocationData, None]:
     geo_data = check_geo_data(ip_address)
     if geo_data:
         logging.debug("[i] Using cached geo data")
@@ -128,20 +106,19 @@ def get_ip_geolocation(ip_address: str) -> dict:
         if response.status_code == 200:
             # Parse the JSON response
             geolocation_data = response.json()
-            # Extract relevant fields: country, city, and ASN (if available)
-            country = geolocation_data.get("country", "N/A")
-            city = geolocation_data.get("city", "N/A")
-            asn_info = geolocation_data.get("org", "N/A")
-            hostname = geolocation_data.get("hostname", "N/A")
-            res = {
-                "ip": ip_address,
-                "country": country,
-                "city": city,
-                "asn": asn_info,
-                "hostname": hostname,
-            }
-            geolocation.append(res)
-            return res
+            geo = GeolocationData(
+                geolocation_data.get("ip"),
+                geolocation_data.get("hostname", "N/A"),
+                geolocation_data.get("anycast", False),
+                geolocation_data.get("city", "N/A"),
+                geolocation_data.get("region", "N/A"),
+                geolocation_data.get("country", "N/A"),
+                geolocation_data.get("loc", "N/A"),
+                geolocation_data.get("org", "N/A"),
+                geolocation_data.get("timezone", "N/A"),
+            )
+            geolocation.append(geo)
+            return geo
         else:
             # Free usage of our API is limited to 50,000 API requests per month
             # https://ipinfo.io/developers#rate-limits
@@ -263,16 +240,16 @@ def process_sessions(sessions:list) -> list:
             if location:
                 update_geodata_to_db(location)
                 logging.info(
-                    f"[x] New session detected! ID: {session_id}, IP: {ip}, Country: {location.get('country')} ({location.get('city')}), ASN: {location.get('asn')}, Hostname: {location.get('hostname')}"
+                    f"[x] New session detected! ID: {session_id}, IP: {ip}, Country: {location.country} ({location.city}), Org: {location.org}, Hostname: {location.hostname}"
                 )
                 actors.append(
                     {
                         "session_id": session_id,
                         "ip": ip,
-                        "country": location.get("country"),
-                        "city": location.get("city"),
-                        "asn": location.get("asn"),
-                        "hostname": location.get("hostname"),
+                        "country": location.country,
+                        "city": location.city,
+                        "org": location.org,
+                        "hostname": location.hostname,
                     }
                 )
             else:
