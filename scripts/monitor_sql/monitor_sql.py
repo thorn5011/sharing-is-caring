@@ -112,6 +112,11 @@ def get_ip_geolocation(ip_address: str) -> Union[GeolocationData, None]:
         return cached_geo_data
     
     sql_geo_data = get_geodata_from_db(ip_address)
+    if len(sql_geo_data) > 1:
+        logging.error(f"[!] Multiple entries found for IP: {ip_address}")
+        return None
+    else:
+        sql_geo_data = sql_geo_data[0] if sql_geo_data else None
     if sql_geo_data:
         if sql_geo_data.get("date_added") < datetime.datetime.now() - datetime.timedelta(days=90):
             logging.debug("[i] Geolocation data is older than 90 days. Updating the data.")
