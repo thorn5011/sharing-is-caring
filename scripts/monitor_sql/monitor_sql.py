@@ -122,6 +122,18 @@ def get_ip_geolocation(ip_address: str) -> Union[GeolocationData, None]:
             logging.debug("[i] Geolocation data is older than 90 days. Updating the data.")
         else:
             logging.debug("[i] Using geo data from SQL")
+            geo = GeolocationData(
+                sql_geo_data.get("ip"),
+                sql_geo_data.get("hostname"),
+                sql_geo_data.get("anycast"),
+                sql_geo_data.get("city"),
+                sql_geo_data.get("region"),
+                sql_geo_data.get("country"),
+                sql_geo_data.get("loc"),
+                sql_geo_data.get("org"),
+                sql_geo_data.get("timezone"),
+                sql_geo_data.get("date_added"),
+            )
             return sql_geo_data
     logging.debug("[i] Geolocation data not found in the cache or SQL. Fetching from the API")
     api_url = f"https://ipinfo.io/{ip_address}/json?token={IPINFOTOKEN}"
