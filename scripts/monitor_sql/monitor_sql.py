@@ -20,7 +20,7 @@ logging.basicConfig(
 sense = SenseHat()
 sense.low_light = True
 sense.set_rotation(180)
-geolocation = []
+cached_geolocation_data = []
 IPINFOTOKEN = os.getenv("IPINFOTOKEN")
 
 colors = {
@@ -39,6 +39,15 @@ colors = {
     "w": (255, 255, 255),  # White
 }
 
+# Database connection details
+db_config = {
+    "user": "cowrie",
+    "password": os.getenv("COWRIE_DB_PASSWORD"),
+    "host": "localhost",
+    "database": "cowrie",
+}
+
+
 
 class GeolocationData:
     def __init__(self, ip, hostname, anycast, city, region, country, loc, org, timezone):
@@ -53,31 +62,22 @@ class GeolocationData:
         self.timezone = timezone
 
 
-def check_geo_data(ip: str) -> Union[dict | None]:
-    for e in geolocation:
+def check_cached_session_geo_data(ip: str) -> Union[dict | None]:
+    for e in cached_geolocation_data:
         if e.ip == ip:
             return e
     return None
 
 
-def update_geodata_to_db(geo:GeolocationData) -> None:
-    # data = {"ip": "1.1.1.1", "hostname": "one.one.one.one", "anycast": True, "city": "Jakarta", "region": "Jakarta", "country": "ID", "loc": "-6.2146,106.8451", "org": "AS13335 Cloudflare, Inc.", "timezone": "Asia/Jakarta"}
-    logging.debug("[i] Updating geolocation data to the database")
-    row = get_geodata_from_db(geo.ip)
-    if not row:
-        insert_geodata_to_db(geo)
-    else:
-        logging.debug(f"[i] Geolocation data already exists in the database, data: {row}")
-        if len(row) > 1:
-            logging.error("[x] Multiple entries found for the same IP address. This should not happen.")
-        elif row[0].get("date_added") < datetime.datetime.now() - datetime.timedelta(days=90):
-            logging.debug("[i] Geolocation data is older than 90 days. Updating the data.")
-            update_geodata_to_db(geo.ip)
-        else:
-            logging.debug("[i] Geolocation data has been updated recently or is not older than 90 days. Skipping the update.")
+# def update_geodata_to_db(geo:GeolocationData) -> None:
+#     # data = {"ip": "1.1.1.1", "hostname": "one.one.one.one", "anycast": True, "city": "Jakarta", "region": "Jakarta", "country": "ID", "loc": "-6.2146,106.8451", "org": "AS13335 Cloudflare, Inc.", "timezone": "Asia/Jakarta"}
+#     logging.debug("[i] Updating geolocation data to the database")
+    # insert_geodata_to_db(geo)
 
 
 def insert_geodata_to_db(geo: GeolocationData) -> None:
+    logging.debug("[i] Inserting geolocation data to the database")
+    # not working, timezone, region, org
     connection = connect_to_db()
     cursor = connection.cursor()
     query = "INSERT INTO geoloc (ip, hostname, org, city, region, country, timezone, anycast) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
@@ -91,16 +91,39 @@ def insert_geodata_to_db(geo: GeolocationData) -> None:
         connection.close()
 
 
+def get_geodata_from_db(ip:str) -> list:
+    logging.debug(f"[i] Fetching geolocation data from the database, IP: {ip}")
+    connection = connect_to_db()
+    cursor = connection.cursor(dictionary=True)
+    query = "SELECT ip, hostname, org, city, region, country, timezone, anycast, date_added FROM geoloc WHERE ip = %s"
+    cursor.execute(query, (ip,))
+    rows = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    logging.debug(f"[i] Geolocation data fetched from the database: {rows}" )
+    return rows
+
+
 def get_ip_geolocation(ip_address: str) -> Union[GeolocationData, None]:
-    geo_data = check_geo_data(ip_address)
-    if geo_data:
-        logging.debug("[i] Using cached geo data")
-        return geo_data
-    # API endpoint for ipinfo.io
+    # Check if the geolocation data is already been seen this session, else get from SQL
+    cached_geo_data = check_cached_session_geo_data(ip_address)
+    if cached_geo_data:
+        logging.debug("[i] Using geo data from session cache")
+        return cached_geo_data
+    
+    sql_geo_data = get_geodata_from_db(ip_address)
+    if sql_geo_data:
+        if sql_geo_data.get("date_added") < datetime.datetime.now() - datetime.timedelta(days=90):
+            logging.debug("[i] Geolocation data is older than 90 days. Updating the data.")
+        else:
+            logging.debug("[i] Using geo data from SQL")
+            return sql_geo_data
+    logging.debug("[i] Geolocation data not found in the cache or SQL. Fetching from the API")
     api_url = f"https://ipinfo.io/{ip_address}/json?token={IPINFOTOKEN}"
 
     try:
         # Sending the request to the API
+        logging.debug(f"[i] Sending a request to the API for IP: {ip_address}")
         response = requests.get(api_url)
         # Check if the request was successful
         if response.status_code == 200:
@@ -117,7 +140,8 @@ def get_ip_geolocation(ip_address: str) -> Union[GeolocationData, None]:
                 geolocation_data.get("org", "N/A"),
                 geolocation_data.get("timezone", "N/A"),
             )
-            geolocation.append(geo)
+            cached_geolocation_data.append(geo)
+            insert_geodata_to_db(geo)
             return geo
         else:
             # Free usage of our API is limited to 50,000 API requests per month
@@ -150,15 +174,6 @@ def send_flag(flag_code: str) -> None:
     sense.set_pixels(new)
     time.sleep(5)
     sense.clear()
-
-
-# Database connection details
-db_config = {
-    "user": "cowrie",
-    "password": os.getenv("COWRIE_DB_PASSWORD"),
-    "host": "localhost",
-    "database": "cowrie",
-}
 
 
 # Connect to the database
@@ -238,7 +253,6 @@ def process_sessions(sessions:list) -> list:
                     time.sleep(0.2)
             location = get_ip_geolocation(ip)
             if location:
-                update_geodata_to_db(location)
                 logging.info(
                     f"[x] New session detected! ID: {session_id}, IP: {ip}, Country: {location.country} ({location.city}), Org: {location.org}, Hostname: {location.hostname}"
                 )
@@ -260,19 +274,6 @@ def process_sessions(sessions:list) -> list:
         logging.debug("[i] No new sessions detected.")
     logging.info(f"[i] Sessions: {len(rows)}, Geolocated: {len(actors)}")
     return actors
-
-
-def get_geodata_from_db(ip:str) -> list:
-    logging.debug(f"[i] Fetching geolocation data from the database, IP: {ip}")
-    connection = connect_to_db()
-    cursor = connection.cursor(dictionary=True)
-    query = "SELECT ip, hostname, org, city, region, country, timezone, anycast, date_added FROM geoloc WHERE ip = %s"
-    cursor.execute(query, (ip,))
-    rows = cursor.fetchall()
-    cursor.close()
-    connection.close()
-    logging.debug(f"[i] Geolocation data fetched from the database: {rows}" )
-    return rows
 
 
 def get_sessions_from_db() -> list:
@@ -301,11 +302,10 @@ def monitor_sessions():
     sense.clear()
 
 
+############################################################################################################
 if __name__ == "__main__":
     logging.info("--------------------------------")
     logging.info("[i] Starting a new session")
     logging.info("--------------------------------")
     # send_flag("NO")
     monitor_sessions()
-
-# todo: store the ipinfo into the DB for a while, e.g. 30 days
