@@ -50,7 +50,7 @@ db_config = {
 
 
 class GeolocationData:
-    def __init__(self, ip, hostname, anycast, city, region, country, loc, org, timezone):
+    def __init__(self, ip, hostname, anycast, city, region, country, loc, org, timezone, date_added=None):
         self.ip = ip
         self.hostname = hostname
         self.anycast = anycast
@@ -60,6 +60,7 @@ class GeolocationData:
         self.loc = loc
         self.org = org
         self.timezone = timezone
+        self.date_added = date_added
 
 
 def check_cached_session_geo_data(ip: str) -> Union[dict | None]:
