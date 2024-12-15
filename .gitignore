@@ -2,3 +2,6 @@
 # Google
 scripts/notifier/token.json
 scripts/notifier/credentials.json
+
+# flask
+scripts/flask_c2/flask.log
